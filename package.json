@@ -20,9 +20,11 @@
     "electron-store": "^8.1.0"
   },
   "devDependencies": {
+    "canvas": "^3.2.1",
     "cross-env": "^7.0.3",
     "electron": "^28.0.0",
-    "electron-builder": "^24.9.1"
+    "electron-builder": "^24.9.1",
+    "png-to-ico": "^3.0.1"
   },
   "build": {
     "appId": "de.feuerwehr.fairness",
@@ -40,27 +42,41 @@
       {
         "from": "apps",
         "to": "django/apps",
-        "filter": ["**/*", "!**/__pycache__/**", "!**/*.pyc"]
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
       },
       {
         "from": "config",
         "to": "django/config",
-        "filter": ["**/*", "!**/__pycache__/**", "!**/*.pyc"]
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
       },
       {
         "from": "templates",
         "to": "django/templates",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "static",
         "to": "django/static",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "staticfiles",
         "to": "django/staticfiles",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "manage.py",
@@ -69,19 +85,32 @@
       {
         "from": "python-embed",
         "to": "python",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
       "target": [
         {
-          "target": "portable",
-          "arch": ["x64"]
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
         }
-      ]
+      ],
+      "icon": "build/icon.ico"
     },
-    "portable": {
-      "artifactName": "${productName}-${version}-portable.exe"
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "FF Feuerwehr-Fairness",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.exe"
     }
   }
 }
