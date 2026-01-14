@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Dienstplan{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="sm:flex sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Dienstplan</h1>
+            <p class="mt-1 text-sm text-gray-500">Übersicht aller Dienste und Übungen</p>
+        </div>
+        {% if request.user.is_leader %}
+        <div class="mt-4 sm:mt-0">
+            <a href="{% url 'duty_create' %}"
+               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-ff-red hover:bg-ff-red-dark">
+                <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Neuer Dienst
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Filter -->
+    <div class="bg-white rounded-lg shadow p-4">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div>
+                <label for="show" class="block text-sm font-medium text-gray-700">Zeitraum</label>
+                <select name="show" id="show"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    <option value="upcoming" {% if current_show == 'upcoming' %}selected{% endif %}>Kommende</option>
+                    <option value="past" {% if current_show == 'past' %}selected{% endif %}>Vergangene</option>
+                    <option value="all" {% if current_show == 'all' %}selected{% endif %}>Alle</option>
+                </select>
+            </div>
+            <div>
+                <label for="type" class="block text-sm font-medium text-gray-700">Diensttyp</label>
+                <select name="type" id="type"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    <option value="">Alle Typen</option>
+                    {% for dtype in duty_types %}
+                    <option value="{{ dtype.id }}" {% if current_type == dtype.id|stringformat:"i" %}selected{% endif %}>{{ dtype.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                <select name="status" id="status"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    <option value="">Alle Status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="submit"
+                        class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    Filtern
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Dienstliste -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <ul class="divide-y divide-gray-200">
+            {% for duty in duties %}
+            <li class="hover:bg-gray-50">
+                <a href="{% url 'duty_detail' duty.id %}" class="block p-4 sm:px-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center min-w-0">
+                            <div class="flex-shrink-0">
+                                {% if duty.duty_type %}
+                                <span class="inline-flex items-center justify-center h-10 w-10 rounded-full" style="background-color: {{ duty.duty_type.color }}20;">
+                                    <span class="text-sm font-medium" style="color: {{ duty.duty_type.color }};">
+                                        {{ duty.duty_type.name|first }}
+                                    </span>
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gray-100">
+                                    <span class="text-sm font-medium text-gray-500">D</span>
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="ml-4 truncate">
+                                <div class="flex items-center">
+                                    <p class="text-sm font-medium text-gray-900 truncate">{{ duty.title }}</p>
+                                    {% if duty.is_today %}
+                                    <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">Heute</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex items-center mt-1 text-sm text-gray-500">
+                                    <svg class="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    {{ duty.date|date:"D, d.m.Y" }}
+                                    {% if duty.start_time %}
+                                    <span class="ml-2">{{ duty.start_time|time:"H:i" }}</span>
+                                    {% if duty.end_time %} - {{ duty.end_time|time:"H:i" }}{% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ml-4 flex-shrink-0 flex items-center space-x-2">
+                            {% if duty.duty_type %}
+                            <span class="px-2 py-1 text-xs font-medium rounded" style="background-color: {{ duty.duty_type.color }}20; color: {{ duty.duty_type.color }};">
+                                {{ duty.duty_type.name }}
+                            </span>
+                            {% endif %}
+                            {% if duty.status == 'draft' %}
+                            <span class="px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-800">Entwurf</span>
+                            {% elif duty.status == 'planned' %}
+                            <span class="px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-800">Geplant</span>
+                            {% elif duty.status == 'confirmed' %}
+                            <span class="px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-800">Bestätigt</span>
+                            {% elif duty.status == 'completed' %}
+                            <span class="px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">Abgeschlossen</span>
+                            {% elif duty.status == 'cancelled' %}
+                            <span class="px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-800">Abgesagt</span>
+                            {% endif %}
+                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+            </li>
+            {% empty %}
+            <li class="p-12 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">Keine Dienste</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                    {% if current_show == 'upcoming' %}
+                    Keine kommenden Dienste geplant.
+                    {% elif current_show == 'past' %}
+                    Keine vergangenen Dienste gefunden.
+                    {% else %}
+                    Keine Dienste vorhanden.
+                    {% endif %}
+                </p>
+                {% if request.user.is_leader %}
+                <div class="mt-6">
+                    <a href="{% url 'duty_create' %}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-ff-red hover:bg-ff-red-dark">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Neuen Dienst anlegen
+                    </a>
+                </div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

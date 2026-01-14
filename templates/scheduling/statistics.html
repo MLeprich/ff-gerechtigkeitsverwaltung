@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load scheduling_tags %}
+
+{% block title %}Einsatzstatistik{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="sm:flex sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Einsatzstatistik</h1>
+            <p class="mt-1 text-sm text-gray-500">
+                Ubersicht der Einteilungen fur faire Verteilung
+            </p>
+        </div>
+        <div class="mt-4 sm:mt-0">
+            <form method="get" class="flex items-center space-x-2">
+                <label for="year" class="text-sm font-medium text-gray-700">Jahr:</label>
+                <select name="year" id="year" onchange="this.form.submit()"
+                        class="block border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Zusammenfassung -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="text-sm font-medium text-gray-500">Gesamt-Einsatze</div>
+            <div class="mt-1 text-3xl font-bold text-gray-900">{{ total_duties }}</div>
+            <div class="text-sm text-gray-500">im Jahr {{ selected_year }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="text-sm font-medium text-gray-500">Aktive Mitglieder</div>
+            <div class="mt-1 text-3xl font-bold text-gray-900">{{ member_stats|length }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="text-sm font-medium text-gray-500">Durchschnitt pro Mitglied</div>
+            <div class="mt-1 text-3xl font-bold text-gray-900">
+                {% if member_stats %}
+                {{ total_duties|floatformat:0 }}
+                {% else %}
+                0
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Fahrzeug-Vergleich -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Einsatze pro Fahrzeug</h3>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% for vehicle in vehicles %}
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="text-sm font-medium text-gray-900">{{ vehicle.call_sign }}</div>
+                        <div class="text-xs text-gray-500">{{ vehicle.vehicle_type.name }}</div>
+                    </div>
+                    <div class="text-2xl font-bold text-ff-red">{{ vehicle_totals|get_item:vehicle.call_sign|default:0 }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Mitglieder-Tabelle -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Einsatze pro Mitglied</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">
+                            Mitglied
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Gesamt
+                        </th>
+                        {% for vehicle in vehicles %}
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {{ vehicle.call_sign|truncatechars:10 }}
+                        </th>
+                        {% endfor %}
+                        <th scope="col" class="px-2 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider" colspan="{{ positions|length }}">
+                            |
+                        </th>
+                        {% for position in positions %}
+                        <th scope="col" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {{ position.short_name }}
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for stat in member_stats %}
+                    <tr class="{% if forloop.counter|divisibleby:2 %}bg-gray-50{% endif %} hover:bg-blue-50">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 {% if forloop.counter|divisibleby:2 %}bg-gray-50{% else %}bg-white{% endif %}">
+                            {{ stat.member.full_name }}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold {% if stat.total > 0 %}text-gray-900{% else %}text-gray-300{% endif %}">
+                            {{ stat.total }}
+                        </td>
+                        {% for vehicle in vehicles %}
+                        {% with count=stat.by_vehicle|get_item:vehicle.call_sign %}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-center {% if count > 0 %}text-gray-700{% else %}text-gray-300{% endif %}">
+                            {{ count }}
+                        </td>
+                        {% endwith %}
+                        {% endfor %}
+                        <td class="px-2 py-3 text-center text-gray-200">|</td>
+                        {% for position in positions %}
+                        {% with count=stat.by_position|get_item:position.short_name %}
+                        <td class="px-2 py-3 whitespace-nowrap text-sm text-center {% if count > 0 %}text-gray-700{% else %}text-gray-300{% endif %}">
+                            {{ count }}
+                        </td>
+                        {% endwith %}
+                        {% endfor %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="100" class="px-4 py-8 text-center text-sm text-gray-500">
+                            Keine Statistiken fur dieses Jahr vorhanden.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="bg-gray-100">
+                    <tr>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 sticky left-0 bg-gray-100">
+                            Summe
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold text-gray-900">
+                            {{ total_duties }}
+                        </td>
+                        {% for vehicle in vehicles %}
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-center font-bold text-gray-700">
+                            {{ vehicle_totals|get_item:vehicle.call_sign }}
+                        </td>
+                        {% endfor %}
+                        <td class="px-2 py-3 text-center text-gray-200">|</td>
+                        {% for position in positions %}
+                        <td class="px-2 py-3 whitespace-nowrap text-sm text-center font-bold text-gray-700">
+                            {{ position_totals|get_item:position.short_name }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- Legende -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h4 class="text-sm font-medium text-gray-900 mb-3">Legende - Positionen</h4>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+            {% for position in positions %}
+            <div class="flex items-center space-x-2">
+                <span class="font-medium text-gray-700">{{ position.short_name }}</span>
+                <span class="text-gray-500">{{ position.name }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+*.egg
+
+# Django
+*.sqlite3
+.secret_key
+*.log
+media/*
+!media/.gitkeep
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Electron
+dist/
+out/
+*.asar
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+build/
+python-embed/
+staticfiles/
+
+# Data
+data/
+logs/
+
+# Environment
+.env
+.env.local

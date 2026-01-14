@@ -1,0 +1,30 @@
+# FF Feuerwehr-Fairness - Electron App Dependencies
+# Python 3.10+ required
+
+# Core Django
+Django==6.0
+asgiref==3.11.0
+sqlparse==0.5.4
+
+# Django extensions
+django-htmx==1.27.0
+
+# Static files
+whitenoise==6.11.0
+
+# Date utilities
+python-dateutil==2.9.0.post0
+six==1.17.0
+
+# Image handling (optional, for member photos)
+pillow==12.0.0
+
+# Tailwind CSS builder (optional, for development)
+pytailwindcss==0.3.0
+
+# Packaging
+packaging==25.0
+
+# Note: psycopg2-binary is NOT needed for Electron app (uses SQLite)
+# gunicorn is also not needed (Django dev server is used)
+# python-dotenv is not needed (settings are hardcoded for Electron)

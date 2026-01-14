@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Ersteinrichtung{% endblock %}
+
+{% block unauthenticated_content %}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-lg w-full space-y-8">
+        <div class="text-center">
+            <svg class="mx-auto h-16 w-16 text-ff-red" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <h2 class="mt-6 text-3xl font-extrabold text-white">
+                Willkommen bei FF Planer
+            </h2>
+            <p class="mt-2 text-sm text-gray-400">
+                Richten Sie Ihre Feuerwehr ein, um zu starten
+            </p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-xl p-8">
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                <div class="rounded-md p-3 {% if message.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-blue-50 text-blue-700{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">
+                        Name der Feuerwehr *
+                    </label>
+                    <div class="mt-1">
+                        <input type="text" name="name" id="name" required
+                               placeholder="z.B. Freiwillige Feuerwehr Musterstadt"
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="short_name" class="block text-sm font-medium text-gray-700">
+                        Kurzname *
+                    </label>
+                    <div class="mt-1">
+                        <input type="text" name="short_name" id="short_name" required
+                               placeholder="z.B. FF Musterstadt"
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="city" class="block text-sm font-medium text-gray-700">
+                        Ort
+                    </label>
+                    <div class="mt-1">
+                        <input type="text" name="city" id="city"
+                               placeholder="z.B. Musterstadt"
+                               class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                Es werden automatisch Standard-Qualifikationen, Positionen und Diensttypen angelegt.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-ff-red hover:bg-ff-red-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ff-red transition-colors">
+                        Feuerwehr einrichten
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Für eingeloggte User -->
+<div class="max-w-lg mx-auto">
+    <div class="text-center mb-8">
+        <svg class="mx-auto h-16 w-16 text-ff-red" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+        <h2 class="mt-4 text-2xl font-bold text-gray-900">Neue Feuerwehr einrichten</h2>
+        <p class="mt-2 text-gray-600">Erstellen Sie eine neue Feuerwehr für das System</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700">
+                    Name der Feuerwehr *
+                </label>
+                <div class="mt-1">
+                    <input type="text" name="name" id="name" required
+                           placeholder="z.B. Freiwillige Feuerwehr Musterstadt"
+                           class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label for="short_name" class="block text-sm font-medium text-gray-700">
+                    Kurzname *
+                </label>
+                <div class="mt-1">
+                    <input type="text" name="short_name" id="short_name" required
+                           placeholder="z.B. FF Musterstadt"
+                           class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label for="city" class="block text-sm font-medium text-gray-700">
+                    Ort
+                </label>
+                <div class="mt-1">
+                    <input type="text" name="city" id="city"
+                           placeholder="z.B. Musterstadt"
+                           class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <a href="{% url 'dashboard' %}"
+                   class="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 text-center">
+                    Abbrechen
+                </a>
+                <button type="submit"
+                        class="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-ff-red hover:bg-ff-red-dark">
+                    Einrichten
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

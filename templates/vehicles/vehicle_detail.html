@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ vehicle.call_sign }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="sm:flex sm:items-center sm:justify-between">
+        <div class="flex items-center space-x-4">
+            <a href="{% url 'vehicle_list' %}" class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">{{ vehicle.call_sign }}</h1>
+                <p class="mt-1 text-sm text-gray-500">{{ vehicle.vehicle_type.name }} ({{ vehicle.vehicle_type.crew_size }})</p>
+            </div>
+        </div>
+        {% if request.user.is_admin %}
+        <div class="mt-4 sm:mt-0 flex space-x-3">
+            <a href="{% url 'vehicle_edit' vehicle.id %}"
+               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-ff-red hover:bg-ff-red-dark">
+                <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Bearbeiten
+            </a>
+            <a href="{% url 'vehicle_delete' vehicle.id %}"
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Löschen
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Fahrzeugdaten -->
+        <div class="lg:col-span-2">
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Fahrzeugdaten</h3>
+                </div>
+                <div class="px-4 py-5 sm:p-6">
+                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Funkrufname</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ vehicle.call_sign }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Fahrzeugtyp</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ vehicle.vehicle_type.name }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Bezeichnung</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ vehicle.name|default:"-" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Kennzeichen</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ vehicle.license_plate|default:"-" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Besatzung</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ vehicle.vehicle_type.crew_size }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Status</dt>
+                            <dd class="mt-1">
+                                {% if vehicle.is_active %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Aktiv
+                                </span>
+                                {% else %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                    Inaktiv
+                                </span>
+                                {% endif %}
+                            </dd>
+                        </div>
+                    </dl>
+                    {% if vehicle.notes %}
+                    <div class="mt-6">
+                        <dt class="text-sm font-medium text-gray-500">Bemerkungen</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ vehicle.notes }}</dd>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Positionen -->
+        <div>
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Besetzungspositionen</h3>
+                </div>
+                <div class="px-4 py-5 sm:p-6">
+                    {% if positions %}
+                    <ul class="divide-y divide-gray-200">
+                        {% for vp in positions %}
+                        <li class="py-3">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">
+                                        {{ vp.seat_number }}. {{ vp.position.short_name }}
+                                    </p>
+                                    <p class="text-xs text-gray-500">{{ vp.position.name }}</p>
+                                </div>
+                                <div class="text-right">
+                                    {% if vp.is_required %}
+                                    <span class="px-2 text-xs font-medium text-red-700 bg-red-100 rounded">Pflicht</span>
+                                    {% elif vp.is_optional %}
+                                    <span class="px-2 text-xs font-medium text-gray-700 bg-gray-100 rounded">Optional</span>
+                                    {% endif %}
+                                    {% if vp.requires_agt %}
+                                    <span class="px-2 text-xs font-medium text-blue-700 bg-blue-100 rounded ml-1">AGT</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if vp.required_qualifications.exists %}
+                            <div class="mt-1">
+                                <span class="text-xs text-gray-500">Benötigt: </span>
+                                {% for q in vp.required_qualifications.all %}
+                                <span class="text-xs text-gray-600">{{ q.code }}{% if not forloop.last %}, {% endif %}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-sm text-gray-500">Keine Positionen konfiguriert.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

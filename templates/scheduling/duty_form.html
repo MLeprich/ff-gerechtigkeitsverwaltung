@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}{% if duty %}{{ duty.title }} bearbeiten{% else %}Neuer Dienst{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center space-x-4">
+            <a href="{% if duty %}{% url 'duty_detail' duty.id %}{% else %}{% url 'duty_list' %}{% endif %}"
+               class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </a>
+            <h1 class="text-2xl font-bold text-gray-900">
+                {% if duty %}{{ duty.title }} bearbeiten{% else %}Neuer Dienst{% endif %}
+            </h1>
+        </div>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Grunddaten -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Grunddaten</h3>
+            </div>
+            <div class="px-4 py-5 sm:p-6 space-y-4">
+                <div>
+                    <label for="title" class="block text-sm font-medium text-gray-700">Titel *</label>
+                    <input type="text" name="title" id="title" required
+                           value="{{ duty.title|default:'' }}"
+                           placeholder="z.B. Dienstabend Januar"
+                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="duty_type" class="block text-sm font-medium text-gray-700">Diensttyp</label>
+                        <select name="duty_type" id="duty_type"
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                            <option value="">-- Kein Typ --</option>
+                            {% for dtype in duty_types %}
+                            <option value="{{ dtype.id }}" {% if duty.duty_type_id == dtype.id %}selected{% endif %}>{{ dtype.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                        <select name="status" id="status"
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if duty.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label for="date" class="block text-sm font-medium text-gray-700">Datum *</label>
+                        <input type="date" name="date" id="date" required
+                               value="{{ duty.date|date:'Y-m-d'|default:'' }}"
+                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="start_time" class="block text-sm font-medium text-gray-700">Beginn</label>
+                        <input type="time" name="start_time" id="start_time"
+                               value="{{ duty.start_time|time:'H:i'|default:'' }}"
+                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="end_time" class="block text-sm font-medium text-gray-700">Ende</label>
+                        <input type="time" name="end_time" id="end_time"
+                               value="{{ duty.end_time|time:'H:i'|default:'' }}"
+                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    </div>
+                </div>
+
+                {% if not duty %}
+                <!-- Wiederholung (nur bei Neuerstellung) -->
+                <div class="border-t border-gray-200 pt-4 mt-4">
+                    <div class="flex items-center mb-4">
+                        <input type="checkbox" name="is_recurring" id="is_recurring"
+                               class="h-4 w-4 text-ff-red border-gray-300 rounded focus:ring-ff-red"
+                               onchange="toggleRecurringOptions()">
+                        <label for="is_recurring" class="ml-2 block text-sm font-medium text-gray-700">
+                            Wiederkehrender Dienst
+                        </label>
+                    </div>
+
+                    <div id="recurring_options" class="hidden space-y-4 pl-6 border-l-2 border-gray-200">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="recurrence_pattern" class="block text-sm font-medium text-gray-700">Wiederholung</label>
+                                <select name="recurrence_pattern" id="recurrence_pattern"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                                    <option value="weekly">Wöchentlich</option>
+                                    <option value="biweekly">Alle 2 Wochen</option>
+                                    <option value="monthly">Monatlich (gleicher Wochentag)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="recurrence_end" class="block text-sm font-medium text-gray-700">Wiederholen bis (optional)</label>
+                                <input type="date" name="recurrence_end" id="recurrence_end"
+                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                                <p class="mt-1 text-xs text-gray-500">Leer = 1 Jahr ab Startdatum</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">
+                            <svg class="inline h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Es werden mehrere einzelne Dienste erstellt. Der Titel wird mit dem Datum ergänzt.
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div>
+                    <label for="location" class="block text-sm font-medium text-gray-700">Ort</label>
+                    <input type="text" name="location" id="location"
+                           value="{{ duty.location|default:'' }}"
+                           placeholder="z.B. Feuerwehrgerätehaus"
+                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                </div>
+
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Beschreibung</label>
+                    <textarea name="description" id="description" rows="3"
+                              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">{{ duty.description|default:'' }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fahrzeuge -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Fahrzeuge</h3>
+                <p class="mt-1 text-sm text-gray-500">Wählen Sie die Fahrzeuge aus, die für diesen Dienst benötigt werden</p>
+            </div>
+            <div class="px-4 py-5 sm:p-6">
+                {% if vehicles %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for vehicle in vehicles %}
+                    <label class="relative flex items-start p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-ff-red">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="vehicles" value="{{ vehicle.id }}"
+                                   {% if duty and vehicle in duty.vehicles.all %}checked{% endif %}
+                                   class="h-4 w-4 text-ff-red border-gray-300 rounded focus:ring-ff-red">
+                        </div>
+                        <div class="ml-3">
+                            <span class="block text-sm font-medium text-gray-900">{{ vehicle.call_sign }}</span>
+                            <span class="block text-xs text-gray-500">{{ vehicle.vehicle_type.short_name }} ({{ vehicle.vehicle_type.crew_size }})</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-500">Keine aktiven Fahrzeuge vorhanden. <a href="{% url 'vehicle_create' %}" class="text-ff-red hover:underline">Fahrzeug erstellen</a></p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Anforderungen -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Anforderungen</h3>
+            </div>
+            <div class="px-4 py-5 sm:p-6 space-y-4">
+                <div>
+                    <label for="min_agt_count" class="block text-sm font-medium text-gray-700">Mindestanzahl AGT</label>
+                    <input type="number" name="min_agt_count" id="min_agt_count" min="0"
+                           value="{{ duty.min_agt_count|default:0 }}"
+                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    <p class="mt-1 text-xs text-gray-500">Mindestens so viele Personen mit gültigem AGT-Status</p>
+                </div>
+
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-gray-700">Bemerkungen</label>
+                    <textarea name="notes" id="notes" rows="2"
+                              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">{{ duty.notes|default:'' }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-end space-x-3">
+            <a href="{% if duty %}{% url 'duty_detail' duty.id %}{% else %}{% url 'duty_list' %}{% endif %}"
+               class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Abbrechen
+            </a>
+            <button type="submit"
+                    class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-ff-red hover:bg-ff-red-dark">
+                {% if duty %}Speichern{% else %}Erstellen{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleRecurringOptions() {
+    const checkbox = document.getElementById('is_recurring');
+    const options = document.getElementById('recurring_options');
+
+    if (checkbox.checked) {
+        options.classList.remove('hidden');
+    } else {
+        options.classList.add('hidden');
+    }
+}
+</script>
+{% endblock %}

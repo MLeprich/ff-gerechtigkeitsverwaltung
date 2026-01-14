@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Fahrzeuge{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="sm:flex sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Fahrzeuge</h1>
+            <p class="mt-1 text-sm text-gray-500">Verwaltung des Fahrzeugparks</p>
+        </div>
+        {% if request.user.is_admin %}
+        <div class="mt-4 sm:mt-0">
+            <a href="{% url 'vehicle_create' %}"
+               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-ff-red hover:bg-ff-red-dark">
+                <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Neues Fahrzeug
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Filter -->
+    <div class="bg-white rounded-lg shadow p-4">
+        <form method="get" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+                <label for="active" class="block text-sm font-medium text-gray-700">Status</label>
+                <select name="active" id="active"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    <option value="">Alle</option>
+                    <option value="active" {% if current_active == 'active' %}selected{% endif %}>Aktiv</option>
+                    <option value="inactive" {% if current_active == 'inactive' %}selected{% endif %}>Inaktiv</option>
+                </select>
+            </div>
+            <div>
+                <label for="type" class="block text-sm font-medium text-gray-700">Fahrzeugtyp</label>
+                <select name="type" id="type"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                    <option value="">Alle Typen</option>
+                    {% for vtype in vehicle_types %}
+                    <option value="{{ vtype.id }}" {% if current_type == vtype.id|stringformat:"i" %}selected{% endif %}>{{ vtype.short_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="submit"
+                        class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    Filtern
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Fahrzeugliste -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for vehicle in vehicles %}
+        <div class="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+            <div class="p-6">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">
+                            <a href="{% url 'vehicle_detail' vehicle.id %}" class="hover:text-ff-red">
+                                {{ vehicle.call_sign }}
+                            </a>
+                        </h3>
+                        <p class="text-sm text-gray-500">{{ vehicle.vehicle_type.name }}</p>
+                    </div>
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if vehicle.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {% if vehicle.is_active %}Aktiv{% else %}Inaktiv{% endif %}
+                    </span>
+                </div>
+
+                <dl class="mt-4 space-y-2">
+                    {% if vehicle.name %}
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500">Bezeichnung</dt>
+                        <dd class="text-sm text-gray-900">{{ vehicle.name }}</dd>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500">Besatzung</dt>
+                        <dd class="text-sm text-gray-900">{{ vehicle.vehicle_type.crew_size }}</dd>
+                    </div>
+                    {% if vehicle.license_plate %}
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500">Kennzeichen</dt>
+                        <dd class="text-sm text-gray-900">{{ vehicle.license_plate }}</dd>
+                    </div>
+                    {% endif %}
+                </dl>
+
+                <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between">
+                    <a href="{% url 'vehicle_detail' vehicle.id %}" class="text-sm text-ff-red hover:text-ff-red-dark">
+                        Details
+                    </a>
+                    {% if request.user.is_admin %}
+                    <a href="{% url 'vehicle_edit' vehicle.id %}" class="text-sm text-gray-600 hover:text-gray-900">
+                        Bearbeiten
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full">
+            <div class="text-center py-12 bg-white rounded-lg shadow">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">Keine Fahrzeuge</h3>
+                <p class="mt-1 text-sm text-gray-500">Erstellen Sie das erste Fahrzeug.</p>
+                {% if request.user.is_admin %}
+                <div class="mt-6">
+                    <a href="{% url 'vehicle_create' %}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-ff-red hover:bg-ff-red-dark">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Neues Fahrzeug
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

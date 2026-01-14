@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.full_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="sm:flex sm:items-center sm:justify-between">
+        <div class="flex items-center space-x-4">
+            <a href="{% url 'member_list' %}" class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">{{ member.full_name }}</h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    {% if member.member_number %}Nr. {{ member.member_number }} | {% endif %}
+                    {{ member.get_status_display }}
+                </p>
+            </div>
+        </div>
+        <div class="mt-4 sm:mt-0 flex space-x-3">
+            <a href="{% url 'member_edit' member.id %}"
+               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-ff-red hover:bg-ff-red-dark">
+                <svg class="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Bearbeiten
+            </a>
+            <a href="{% url 'member_delete' member.id %}"
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Löschen
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Persönliche Daten -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Persönliche Daten</h3>
+                </div>
+                <div class="px-4 py-5 sm:p-6">
+                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Vorname</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ member.first_name }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Nachname</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ member.last_name }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Geburtsdatum</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ member.birth_date|date:"d.m.Y"|default:"-" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">E-Mail</dt>
+                            <dd class="mt-1 text-sm text-gray-900">
+                                {% if member.email %}
+                                <a href="mailto:{{ member.email }}" class="text-ff-red hover:text-ff-red-dark">{{ member.email }}</a>
+                                {% else %}-{% endif %}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Telefon</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ member.phone|default:"-" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Mobil</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ member.mobile|default:"-" }}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Feuerwehr-Daten -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Feuerwehr-Daten</h3>
+                </div>
+                <div class="px-4 py-5 sm:p-6">
+                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Mitgliedsnummer</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ member.member_number|default:"-" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Eintrittsdatum</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ member.entry_date|date:"d.m.Y"|default:"-" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Einheit</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ member.unit.name|default:"-" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Status</dt>
+                            <dd class="mt-1">
+                                {% if member.status == 'active' %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Aktiv
+                                </span>
+                                {% elif member.status == 'inactive' %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                    Inaktiv
+                                </span>
+                                {% else %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    {{ member.get_status_display }}
+                                </span>
+                                {% endif %}
+                            </dd>
+                        </div>
+                    </dl>
+                    {% if member.notes %}
+                    <div class="mt-6">
+                        <dt class="text-sm font-medium text-gray-500">Bemerkungen</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ member.notes }}</dd>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Qualifikationen -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Qualifikationen</h3>
+                    <button type="button" onclick="openModal('qualificationModal')"
+                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-ff-red hover:bg-ff-red-dark">
+                        <svg class="-ml-0.5 mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Hinzufugen
+                    </button>
+                </div>
+                <div class="px-4 py-5 sm:p-6">
+                    {% if qualifications %}
+                    <div class="space-y-4">
+                        {% regroup qualifications by qualification.category as category_list %}
+                        {% for category in category_list %}
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-500 mb-2">{{ category.grouper.name|default:"Sonstige" }}</h4>
+                            <div class="flex flex-wrap gap-2">
+                                {% for mq in category.list %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 group">
+                                    {{ mq.qualification.code }}
+                                    {% if mq.acquired_date %}
+                                    <span class="ml-1 text-xs text-blue-600">({{ mq.acquired_date|date:"Y" }})</span>
+                                    {% endif %}
+                                    <form action="{% url 'member_qualification_remove' member.id mq.qualification.id %}" method="post" class="inline ml-1">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-blue-600 hover:text-red-600 opacity-50 group-hover:opacity-100" title="Entfernen">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-gray-500">Keine Qualifikationen hinterlegt.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- AGT-Status -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">AGT-Status</h3>
+                </div>
+                <div class="px-4 py-5 sm:p-6">
+                    {% if agt_valid %}
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-green-800">Einsatzfähig</p>
+                            <p class="text-xs text-green-600">G26.3 gültig, Übung absolviert</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-700">Nicht einsatzfähig</p>
+                            <p class="text-xs text-gray-500">Kein AGT oder Anforderungen nicht erfüllt</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Untersuchungen -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Untersuchungen</h3>
+                    <button type="button" onclick="openModal('examModal')"
+                            class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-ff-red hover:bg-ff-red-dark">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="px-4 py-5 sm:p-6">
+                    {% if medical_exams %}
+                    <ul class="divide-y divide-gray-200">
+                        {% for exam in medical_exams %}
+                        <li class="py-3 group">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">{{ exam.exam_type.name }}</p>
+                                    <p class="text-xs text-gray-500">{{ exam.exam_date|date:"d.m.Y" }}</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="text-right">
+                                        {% if exam.valid_until %}
+                                        <p class="text-xs text-gray-500">Gültig bis</p>
+                                        <p class="text-sm {% if exam.is_valid %}text-green-600{% else %}text-red-600{% endif %}">
+                                            {{ exam.valid_until|date:"d.m.Y" }}
+                                        </p>
+                                        {% endif %}
+                                    </div>
+                                    <form action="{% url 'member_exam_delete' member.id exam.id %}" method="post" class="opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-gray-400 hover:text-red-600" title="Löschen">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-sm text-gray-500">Keine Untersuchungen hinterlegt.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- AGT-Übungen -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">AGT-Übungen</h3>
+                    <button type="button" onclick="openModal('exerciseModal')"
+                            class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-ff-red hover:bg-ff-red-dark">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="px-4 py-5 sm:p-6">
+                    {% if exercise_records %}
+                    <ul class="divide-y divide-gray-200">
+                        {% for exercise in exercise_records %}
+                        <li class="py-3 group">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">{{ exercise.exercise_type }}</p>
+                                    <p class="text-xs text-gray-500">{{ exercise.exercise_date|date:"d.m.Y" }}</p>
+                                </div>
+                                <form action="{% url 'member_exercise_delete' member.id exercise.id %}" method="post" class="opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-gray-400 hover:text-red-600" title="Löschen">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-sm text-gray-500">Keine AGT-Übungen hinterlegt.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Metadaten -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <dl class="space-y-3">
+                        <div class="flex justify-between">
+                            <dt class="text-sm text-gray-500">Erstellt</dt>
+                            <dd class="text-sm text-gray-900">{{ member.created_at|date:"d.m.Y H:i" }}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-sm text-gray-500">Aktualisiert</dt>
+                            <dd class="text-sm text-gray-900">{{ member.updated_at|date:"d.m.Y H:i" }}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Qualifikation hinzufügen -->
+<div id="qualificationModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onclick="closeModal('qualificationModal')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form action="{% url 'member_qualification_add' member.id %}" method="post">
+                {% csrf_token %}
+                <div class="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Qualifikation hinzufügen</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="qualification" class="block text-sm font-medium text-gray-700">Qualifikation *</label>
+                            <select name="qualification" id="qualification" required
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                                <option value="">-- Bitte wählen --</option>
+                                {% regroup available_qualifications by category as qual_categories %}
+                                {% for cat in qual_categories %}
+                                <optgroup label="{{ cat.grouper.name|default:'Sonstige' }}">
+                                    {% for qual in cat.list %}
+                                    <option value="{{ qual.id }}">{{ qual.code }} - {{ qual.name }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="acquired_date" class="block text-sm font-medium text-gray-700">Erworben am</label>
+                            <input type="date" name="acquired_date" id="acquired_date"
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="qual_notes" class="block text-sm font-medium text-gray-700">Bemerkungen</label>
+                            <textarea name="notes" id="qual_notes" rows="2"
+                                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit"
+                            class="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-ff-red border border-transparent rounded-md shadow-sm hover:bg-ff-red-dark sm:ml-3 sm:w-auto sm:text-sm">
+                        Hinzufügen
+                    </button>
+                    <button type="button" onclick="closeModal('qualificationModal')"
+                            class="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">
+                        Abbrechen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Untersuchung hinzufügen -->
+<div id="examModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onclick="closeModal('examModal')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form action="{% url 'member_exam_add' member.id %}" method="post">
+                {% csrf_token %}
+                <div class="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Untersuchung hinzufügen</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="exam_type" class="block text-sm font-medium text-gray-700">Untersuchungstyp *</label>
+                            <select name="exam_type" id="exam_type" required
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                                <option value="">-- Bitte wählen --</option>
+                                {% for exam_type in exam_types %}
+                                <option value="{{ exam_type.id }}">{{ exam_type.code }} - {{ exam_type.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="exam_date" class="block text-sm font-medium text-gray-700">Untersuchungsdatum *</label>
+                            <input type="date" name="exam_date" id="exam_date" required
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" name="result_positive" id="result_positive" checked
+                                   class="h-4 w-4 text-ff-red focus:ring-ff-red border-gray-300 rounded">
+                            <label for="result_positive" class="ml-2 block text-sm text-gray-900">
+                                Bestanden
+                            </label>
+                        </div>
+                        <div>
+                            <label for="exam_notes" class="block text-sm font-medium text-gray-700">Bemerkungen</label>
+                            <textarea name="notes" id="exam_notes" rows="2"
+                                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit"
+                            class="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-ff-red border border-transparent rounded-md shadow-sm hover:bg-ff-red-dark sm:ml-3 sm:w-auto sm:text-sm">
+                        Hinzufügen
+                    </button>
+                    <button type="button" onclick="closeModal('examModal')"
+                            class="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">
+                        Abbrechen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: AGT-Übung hinzufügen -->
+<div id="exerciseModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onclick="closeModal('exerciseModal')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form action="{% url 'member_exercise_add' member.id %}" method="post">
+                {% csrf_token %}
+                <div class="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">AGT-Übung hinzufügen</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="exercise_date" class="block text-sm font-medium text-gray-700">Übungsdatum *</label>
+                            <input type="date" name="exercise_date" id="exercise_date" required
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="exercise_type" class="block text-sm font-medium text-gray-700">Übungsart *</label>
+                            <select name="exercise_type" id="exercise_type" required
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm">
+                                <option value="">-- Bitte wählen --</option>
+                                <option value="Belastungsübung">Belastungsübung</option>
+                                <option value="Einsatzübung">Einsatzübung</option>
+                                <option value="Wärmegewöhnung">Wärmegewöhnung</option>
+                                <option value="Streckenbegehung">Streckenbegehung</option>
+                                <option value="Realeinsatz">Realeinsatz</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="exercise_notes" class="block text-sm font-medium text-gray-700">Bemerkungen</label>
+                            <textarea name="notes" id="exercise_notes" rows="2"
+                                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-ff-red focus:border-ff-red sm:text-sm"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit"
+                            class="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-ff-red border border-transparent rounded-md shadow-sm hover:bg-ff-red-dark sm:ml-3 sm:w-auto sm:text-sm">
+                        Hinzufügen
+                    </button>
+                    <button type="button" onclick="closeModal('exerciseModal')"
+                            class="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">
+                        Abbrechen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+// ESC-Taste schließt Modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('[id$="Modal"]').forEach(function(modal) {
+            modal.classList.add('hidden');
+        });
+        document.body.classList.remove('overflow-hidden');
+    }
+});
+</script>
+{% endblock %}
