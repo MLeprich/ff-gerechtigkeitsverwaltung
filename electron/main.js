@@ -105,9 +105,46 @@ function getPythonPath() {
     }
 }
 
+// Test if Python works
+function testPython(pythonPath, env) {
+    return new Promise((resolve, reject) => {
+        log.info('Testing Python...');
+        const testProcess = spawn(pythonPath, ['-c', 'import sys; print(sys.version); print(sys.path)'], {
+            env: env,
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        let output = '';
+        let errorOutput = '';
+
+        testProcess.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        testProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+
+        testProcess.on('close', (code) => {
+            if (code === 0) {
+                log.info(`Python test successful:\n${output}`);
+                resolve(true);
+            } else {
+                log.error(`Python test failed (code ${code}):\n${errorOutput}`);
+                reject(new Error(`Python test failed: ${errorOutput}`));
+            }
+        });
+
+        testProcess.on('error', (err) => {
+            log.error('Python executable not found:', err);
+            reject(err);
+        });
+    });
+}
+
 // Start Django server
 function startDjango() {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         const djangoPath = getDjangoPath();
         const pythonPath = getPythonPath();
         const managePath = path.join(djangoPath, 'manage.py');
@@ -116,6 +153,27 @@ function startDjango() {
         log.info(`Python path: ${pythonPath}`);
         log.info(`Manage.py path: ${managePath}`);
 
+        // Check if files exist
+        if (!fs.existsSync(pythonPath)) {
+            log.error(`Python executable not found: ${pythonPath}`);
+            reject(new Error(`Python nicht gefunden: ${pythonPath}`));
+            return;
+        }
+
+        if (!fs.existsSync(managePath)) {
+            log.error(`manage.py not found: ${managePath}`);
+            reject(new Error(`manage.py nicht gefunden: ${managePath}`));
+            return;
+        }
+
+        // Log directory contents for debugging
+        log.info(`Django directory contents: ${fs.readdirSync(djangoPath).join(', ')}`);
+
+        const pythonDir = path.dirname(pythonPath);
+        if (fs.existsSync(pythonDir)) {
+            log.info(`Python directory contents: ${fs.readdirSync(pythonDir).slice(0, 20).join(', ')}...`);
+        }
+
         // Set environment variables
         const dbPath = getDatabasePath();
         const env = {
@@ -123,32 +181,51 @@ function startDjango() {
             ELECTRON_MODE: 'true',
             DEBUG: process.env.DEBUG || 'false',
             PYTHONUNBUFFERED: '1',
-            FF_DATABASE_PATH: dbPath
+            FF_DATABASE_PATH: dbPath,
+            // Add Django path to PYTHONPATH so Python can find config and apps modules
+            PYTHONPATH: djangoPath + (process.platform === 'win32' ? ';' : ':') + (process.env.PYTHONPATH || '')
         };
 
         log.info(`Database path: ${dbPath} (shared for all users)`);
+        log.info(`PYTHONPATH: ${env.PYTHONPATH}`);
+
+        // Test Python first
+        try {
+            await testPython(pythonPath, env);
+        } catch (err) {
+            reject(err);
+            return;
+        }
 
         // First run migrations
+        log.info('Running migrations...');
         const migrateProcess = spawn(pythonPath, [managePath, 'migrate', '--run-syncdb'], {
             cwd: djangoPath,
             env: env,
             stdio: ['pipe', 'pipe', 'pipe']
         });
 
+        let migrateError = '';
+
         migrateProcess.stdout.on('data', (data) => {
             log.info(`[migrate] ${data.toString().trim()}`);
         });
 
         migrateProcess.stderr.on('data', (data) => {
-            log.warn(`[migrate] ${data.toString().trim()}`);
+            const msg = data.toString().trim();
+            migrateError += msg + '\n';
+            log.warn(`[migrate] ${msg}`);
         });
 
         migrateProcess.on('close', (code) => {
             if (code !== 0) {
                 log.error(`Migration failed with code ${code}`);
+                log.error(`Migration error output: ${migrateError}`);
+                // Don't reject here, try to start server anyway
             }
 
             // Start Django server
+            log.info('Starting Django server...');
             djangoProcess = spawn(pythonPath, [
                 managePath,
                 'runserver',
@@ -159,6 +236,8 @@ function startDjango() {
                 env: env,
                 stdio: ['pipe', 'pipe', 'pipe']
             });
+
+            let serverError = '';
 
             djangoProcess.stdout.on('data', (data) => {
                 const output = data.toString();
@@ -172,11 +251,12 @@ function startDjango() {
 
             djangoProcess.stderr.on('data', (data) => {
                 const output = data.toString();
+                serverError += output;
                 // Django logs to stderr by default
                 if (output.includes('Starting development server')) {
                     log.info('[Django] Server started');
                     resolve();
-                } else if (output.includes('Error') || output.includes('Exception')) {
+                } else if (output.includes('Error') || output.includes('Exception') || output.includes('Traceback')) {
                     log.error(`[Django] ${output.trim()}`);
                 } else {
                     log.info(`[Django] ${output.trim()}`);
@@ -190,6 +270,9 @@ function startDjango() {
 
             djangoProcess.on('close', (code) => {
                 log.info(`Django process exited with code ${code}`);
+                if (code !== 0 && serverError) {
+                    log.error(`Django server error: ${serverError}`);
+                }
                 djangoProcess = null;
             });
 
@@ -198,11 +281,16 @@ function startDjango() {
                 resolve(); // Resolve anyway after timeout
             }, 10000);
         });
+
+        migrateProcess.on('error', (err) => {
+            log.error('Failed to start migration:', err);
+            reject(err);
+        });
     });
 }
 
 // Wait for Django to be ready
-function waitForDjango(maxAttempts = 30) {
+function waitForDjango(maxAttempts = 60) {
     return new Promise((resolve, reject) => {
         let attempts = 0;
 
@@ -398,9 +486,10 @@ app.whenReady().then(async () => {
 
     } catch (error) {
         log.error('Failed to start application:', error);
+        const logPath = log.transports.file.getFile().path;
         dialog.showErrorBox(
             'Startfehler',
-            `Die Anwendung konnte nicht gestartet werden.\n\nFehler: ${error.message}\n\nBitte stellen Sie sicher, dass Python installiert ist.`
+            `Die Anwendung konnte nicht gestartet werden.\n\nFehler: ${error.message}\n\nBitte prüfen Sie die Log-Datei für Details:\n${logPath}`
         );
         app.quit();
     }

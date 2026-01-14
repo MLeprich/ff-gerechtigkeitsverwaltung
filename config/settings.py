@@ -13,13 +13,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Electron mode detection
 ELECTRON_MODE = os.getenv('ELECTRON_MODE', 'false').lower() == 'true'
 
-# Security settings - Generate secret key if not exists
-SECRET_KEY_FILE = BASE_DIR / '.secret_key'
-if SECRET_KEY_FILE.exists():
-    SECRET_KEY = SECRET_KEY_FILE.read_text().strip()
+# Get data directory from environment (set by Electron) or use local path
+# This ensures we write to a location with write permissions (ProgramData on Windows)
+DATA_PATH = os.getenv('FF_DATABASE_PATH')
+if DATA_PATH:
+    SECRET_KEY_DIR = Path(DATA_PATH).parent
 else:
+    SECRET_KEY_DIR = BASE_DIR
+
+# Security settings - Generate secret key if not exists
+SECRET_KEY_FILE = SECRET_KEY_DIR / '.secret_key'
+try:
+    if SECRET_KEY_FILE.exists():
+        SECRET_KEY = SECRET_KEY_FILE.read_text().strip()
+    else:
+        SECRET_KEY = secrets.token_urlsafe(50)
+        SECRET_KEY_DIR.mkdir(parents=True, exist_ok=True)
+        SECRET_KEY_FILE.write_text(SECRET_KEY)
+except (PermissionError, OSError):
+    # Fallback: generate a new key each time (not ideal but works)
     SECRET_KEY = secrets.token_urlsafe(50)
-    SECRET_KEY_FILE.write_text(SECRET_KEY)
 
 # Debug mode for development
 DEBUG = os.getenv('DEBUG', 'true').lower() == 'true'
@@ -144,9 +157,19 @@ CSRF_COOKIE_SECURE = False
 # Allow embedding in Electron
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
-# Logging
-LOGS_DIR = BASE_DIR / 'logs'
-LOGS_DIR.mkdir(parents=True, exist_ok=True)
+# Logging - use writable directory (ProgramData on Windows when in Electron mode)
+if ELECTRON_MODE and DATA_PATH:
+    LOGS_DIR = Path(DATA_PATH).parent / 'logs'
+else:
+    LOGS_DIR = BASE_DIR / 'logs'
+
+try:
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+except (PermissionError, OSError):
+    # Fallback to temp directory
+    import tempfile
+    LOGS_DIR = Path(tempfile.gettempdir()) / 'FF-Feuerwehr-Fairness' / 'logs'
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 LOGGING = {
     'version': 1,

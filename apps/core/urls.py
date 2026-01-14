@@ -6,6 +6,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile, name='profile'),
+    path('ersteinrichtung/', views.first_run_setup, name='first_run_setup'),
     path('setup/', views.setup_wizard, name='setup_wizard'),
 
     # Verwaltung (Admin-Bereich)

@@ -42,6 +42,10 @@ def leader_required(view_func):
 
 
 def login_view(request):
+    # Check if this is a first-time setup (no users exist)
+    if not User.objects.exists():
+        return redirect('first_run_setup')
+
     if request.user.is_authenticated:
         return redirect('dashboard')
 
@@ -58,6 +62,56 @@ def login_view(request):
             messages.error(request, 'Ungültige Anmeldedaten.')
 
     return render(request, 'core/login.html')
+
+
+def first_run_setup(request):
+    """Initial setup for fresh installations - creates first admin user"""
+    # Only allow if no users exist (security measure)
+    if User.objects.exists():
+        return redirect('login')
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        password_confirm = request.POST.get('password_confirm', '')
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+
+        # Validation
+        errors = []
+        if not username:
+            errors.append('Benutzername ist erforderlich.')
+        if not password:
+            errors.append('Passwort ist erforderlich.')
+        elif len(password) < 8:
+            errors.append('Das Passwort muss mindestens 8 Zeichen lang sein.')
+        elif password != password_confirm:
+            errors.append('Die Passwörter stimmen nicht überein.')
+
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            return render(request, 'core/first_run_setup.html', {
+                'username': username,
+                'first_name': first_name,
+                'last_name': last_name,
+            })
+
+        # Create the admin user
+        user = User.objects.create_superuser(
+            username=username,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            role='admin'
+        )
+
+        # Log the user in
+        login(request, user)
+        messages.success(request, f'Willkommen, {user.first_name or user.username}! Bitte richten Sie jetzt Ihre Feuerwehr ein.')
+        return redirect('setup_wizard')
+
+    return render(request, 'core/first_run_setup.html')
 
 
 def logout_view(request):
